@@ -16,6 +16,7 @@ import { useCommercialStore } from './stores/commercial';
 import ReservationFormModal from './components/ReservationFormModal.vue';
 import RatePlanFormModal from './components/RatePlanFormModal.vue';
 import FolioChargeModal from './components/FolioChargeModal.vue';
+import DashboardMetrics from './components/DashboardMetrics.vue';
 
 const hotelStore = useHotelStore();
 const authStore = useAuthStore();
@@ -225,65 +226,70 @@ const submitCreateRoom = async () => {
         :onToggleTheme="toggleTheme"
         :onLogout="authStore.logout"
       />
-      <section v-if="!isAuthed" class="max-w-md mx-auto glass-card p-8">
-        <h2 class="text-2xl font-bold text-hotel-cream">Acceso del staff</h2>
-        <p class="text-sm text-white/60 mb-6">Usá tus credenciales para ingresar.</p>
-        <form class="space-y-4" @submit.prevent="handleLogin">
+      
+      <section v-if="!isAuthed" class="max-w-md mx-auto glass-card p-8 mt-20">
+        <div class="mb-8 text-center">
+          <div class="brand-mark mx-auto mb-4 w-16 h-16 text-xl">HV</div>
+          <h2 class="text-3xl font-extrabold text-hotel-cream tracking-tight">Palo Alto PMS</h2>
+          <p class="text-sm text-white/40 mt-1 uppercase tracking-[0.3em]">Elite Management System</p>
+        </div>
+        
+        <form class="space-y-5" @submit.prevent="handleLogin">
           <div>
-            <label for="login-email" class="block text-xs uppercase tracking-widest text-white/50 mb-2">Email</label>
+            <label for="login-email" class="field-label">Email Corporativo</label>
             <input id="login-email" v-model="email" type="email" class="input-dark" placeholder="staff@paloalto.com" />
           </div>
           <div>
-            <label for="login-password" class="block text-xs uppercase tracking-widest text-white/50 mb-2">Password</label>
+            <label for="login-password" class="field-label">Contraseña</label>
             <input id="login-password" v-model="password" type="password" class="input-dark" placeholder="••••••••" />
           </div>
-          <button class="btn-primary w-full" :disabled="authStore.loading">
-            {{ authStore.loading ? 'Ingresando...' : 'Ingresar' }}
+          <button class="btn-primary w-full py-4 text-lg" :disabled="authStore.loading">
+            {{ authStore.loading ? 'Autenticando...' : 'Iniciar Sesión' }}
           </button>
-          <p v-if="authStore.error" class="text-sm text-red-300">{{ authStore.error }}</p>
+          <p v-if="authStore.error" class="text-sm text-red-400 text-center animate-pulse">{{ authStore.error }}</p>
         </form>
       </section>
 
-      <section v-else>
-        <div class="status-legend">
-          <span class="flex items-center gap-2"><div class="w-3 h-3 bg-available rounded-full"></div> Libre</span>
-          <span class="flex items-center gap-2"><div class="w-3 h-3 bg-occupied rounded-full"></div> Ocupada</span>
-          <span class="flex items-center gap-2"><div class="w-3 h-3 bg-dirty rounded-full"></div> Sucia</span>
-          <span class="flex items-center gap-2"><div class="w-3 h-3 bg-maintenance rounded-full"></div> Mantenimiento</span>
+      <section v-else class="animate-in fade-in duration-700">
+        <!-- Dashboard Header -->
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+          <div>
+            <h1 class="text-4xl font-extrabold text-hotel-cream tracking-tighter mb-1">
+              Dashboard Principal
+            </h1>
+            <p class="text-white/40 font-medium">
+              Bienvenido de nuevo, {{ authStore.user?.name }}. Tenés {{ hotelStore.availableRooms }} habitaciones listas para vender.
+            </p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+             <button class="btn-secondary flex items-center gap-2 group" @click="refreshRooms">
+               <span class="group-hover:rotate-180 transition-transform duration-500">↻</span> Refrescar
+             </button>
+             <button v-if="authStore.user?.role === 'ADMIN'" class="btn-primary flex items-center gap-2" @click="openCreateRoom">
+               <span class="text-xl">+</span> Nueva Habitación
+             </button>
+          </div>
         </div>
+
+        <!-- NEW PREMIUM METRICS -->
+        <DashboardMetrics 
+          :total="hotelStore.totalRooms"
+          :available="hotelStore.availableRooms"
+          :occupied="hotelStore.occupiedRooms"
+          :dirty="hotelStore.dirtyRooms"
+          :revenue="commercialSummary.totalRevenue"
+          :adr="commercialSummary.averageRate"
+        />
+
         <div class="flex flex-col gap-6 mb-6">
-          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 class="text-2xl font-semibold text-hotel-cream">Habitaciones</h2>
-              <p class="text-sm text-white/60">
-                Bienvenido, {{ authStore.user?.name }} ({{ authStore.user?.role }})
-              </p>
-            </div>
-            <div class="flex items-center gap-3">
-              <button class="btn-secondary" @click="refreshRooms">Refrescar</button>
-              <button v-if="authStore.user?.role === 'ADMIN'" class="btn-primary" @click="openCreateRoom">Nueva habitación</button>
-              <button class="btn-secondary" @click="authStore.logout()">Cerrar sesión</button>
-            </div>
+          <div class="status-legend px-4 py-2 glass-card inline-flex self-start">
+            <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"><div class="w-2 h-2 bg-available rounded-full animate-pulse"></div> Libre</span>
+            <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"><div class="w-2 h-2 bg-occupied rounded-full"></div> Ocupada</span>
+            <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"><div class="w-2 h-2 bg-dirty rounded-full"></div> Sucia</span>
+            <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"><div class="w-2 h-2 bg-maintenance rounded-full"></div> Mantenimiento</span>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="metric-card">
-              <span class="metric-label">Total</span>
-              <span class="metric-value">{{ hotelStore.totalRooms }}</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">Libres</span>
-              <span class="metric-value text-available">{{ hotelStore.availableRooms }}</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">Ocupadas</span>
-              <span class="metric-value text-occupied">{{ hotelStore.occupiedRooms }}</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">Sucia/Mant.</span>
-              <span class="metric-value text-dirty">{{ hotelStore.dirtyRooms + hotelStore.maintenanceRooms }}</span>
-            </div>
-          </div>
 
           <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div class="flex-1">
