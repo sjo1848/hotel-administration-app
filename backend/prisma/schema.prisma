@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  DIRTY
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  name     String
+  role     String @default("RECEPTIONIST")
+  refreshToken String?
+  refreshTokenId String?
+  refreshTokenFamily String?
+}
+
+model Room {
+  id        String     @id @default(cuid())
+  number    String     @unique
+  type      String
+  status    RoomStatus @default(AVAILABLE)
+  price     Decimal
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  stays     Stay[]
+  reservations Reservation[]
+}
+
+model Stay {
+  id         String    @id @default(cuid())
+  roomId     String
+  guestName  String
+  checkInAt  DateTime  @default(now())
+  checkOutAt DateTime?
+
+  room       Room      @relation(fields: [roomId], references: [id])
+
+  createdAt  DateTime  @default(now())
+
+  @@index([roomId])
+  @@index([checkInAt])
+}
+
+model Reservation {
+  id           String            @id @default(cuid())
+  guestName    String
+  checkInDate  DateTime
+  checkOutDate DateTime
+  roomType     String            // Matchea con Room.type
+  roomId       String?
+  status       ReservationStatus @default(CONFIRMED)
+  totalPrice   Decimal
+  email        String?
+  phone        String?
+
+  room  Room?  @relation(fields: [roomId], references: [id])
+  folio Folio?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RatePlan {
+  id          String  @id @default(cuid())
+  name        String
+  roomType    String // "Suite", "Doble", etc
+  price       Decimal
+  currency    String  @default("USD")
+  refundable  Boolean @default(true)
+  description String?
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Folio {
+  id            String @id @default(cuid())
+  reservationId String @unique
+  status        String @default("OPEN") // OPEN, CLOSED
+
+  reservation Reservation   @relation(fields: [reservationId], references: [id])
+  charges     FolioCharge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FolioCharge {
+  id          String   @id @default(cuid())
+  folioId     String
+  description String
+  amount      Decimal
+  quantity    Int      @default(1)
+  date        DateTime @default(now())
+
+  folio Folio @relation(fields: [folioId], references: [id])
+}

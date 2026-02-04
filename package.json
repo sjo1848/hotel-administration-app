@@ -1,0 +1,23 @@
+{
+  "name": "sistema-gestion-hotelera",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "format:all": "prettier --write .",
+    "test:all": "npm run test --prefix backend && npm run test --prefix frontend"
+  },
+  "devDependencies": {
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "backend/**/*.{ts,js,json}": [
+      "npm run lint --prefix backend",
+      "npm run format --prefix backend"
+    ],
+    "frontend/**/*.{ts,vue,js,json}": [
+      "npm run lint --prefix frontend"
+    ]
+  }
+}
