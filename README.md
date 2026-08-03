@@ -1,137 +1,174 @@
-# Sistema de Gestión Hotelera (PMS)
+# Hotel Operations PMS — NestJS + Vue Reference
 
-PMS para operación hotelera con backend NestJS + Prisma + Postgres y frontend Vue + Pinia + Tailwind.
+**Full-stack hotel operations system built with NestJS, Prisma, PostgreSQL and Vue 3.**
 
-## Stack
-- Backend: NestJS, Prisma, PostgreSQL
-- Frontend: Vue 3, Pinia, Tailwind
-- Infra: Docker Compose
+This repository is the portfolio reference for the **TypeScript/NestJS backend stack**. It contains authentication, authorization, hotel workflows, typed frontend integration, test infrastructure, security controls and operational metrics.
 
-## Requisitos
-- Docker + Docker Compose
-- Node 20+ (solo si corres fuera de Docker)
+It is intentionally separate from **HMS Elite**, the Rust/React multi-hotel SaaS implementation. This repository shows the TypeScript implementation path, but it is not currently release-ready.
 
-## Inicio rápido (Docker)
+> **Current status:** active reference implementation with a red CI baseline. The latest review found one frontend TypeScript error and 415 backend lint findings. Test and E2E tooling exists, but passing-build and passing-test claims remain unverified until the quality baseline is restored.
+
+## What this project demonstrates
+
+| Area | Repository evidence |
+|---|---|
+| Backend development | NestJS 11, TypeScript, Prisma and PostgreSQL |
+| Frontend development | Vue 3, Pinia, Vite, TypeScript and Tailwind CSS |
+| API design | Versioned REST API, DTO validation and Swagger/OpenAPI |
+| Authentication | Short-lived access tokens, HttpOnly refresh cookies and token rotation |
+| Authorization | Administrator and staff restrictions |
+| Test infrastructure | Jest/Supertest, Vitest and Playwright configuration |
+| Security design | Bcrypt, Helmet, CSP, throttling and refresh-token reuse detection |
+| Operations | Docker Compose, production Dockerfiles and protected Prometheus metrics |
+
+## Current quality baseline
+
+The repository has meaningful QA infrastructure, but the latest GitHub Actions run is **not green**:
+
+- Frontend lint passes, but the production build is blocked by a grouping type mismatch in `AppSidebar.vue`.
+- Backend lint reports **415 findings**: many are formatting corrections, while others involve unsafe `any` usage and require deliberate refactoring.
+- Backend build/tests and frontend unit/E2E stages were not reached in that run because earlier gates failed.
+- Dependency audits report vulnerabilities that require triage before a public deployment.
+
+For that reason, this repository should be presented as **technical evidence under remediation**, not as a stable release.
+
+## Main workflows present in the codebase
+
+- Authenticate administrators and staff.
+- Manage rooms and room states.
+- Enforce role-specific permissions.
+- Perform check-in and check-out operations.
+- Maintain access/refresh sessions.
+- Expose protected runtime metrics.
+- Configure backend and browser E2E journeys.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    USER[Admin / staff] --> FE[Vue 3 + Pinia]
+    FE -->|REST / JSON| API[NestJS API]
+    API --> AUTH[JWT, refresh rotation and RBAC]
+    API --> DOMAIN[Hotel application modules]
+    DOMAIN --> PRISMA[Prisma ORM]
+    PRISMA --> DB[(PostgreSQL)]
+    API --> METRICS[Prometheus metrics]
+```
+
+## Technology stack
+
+### Backend
+
+- NestJS 11 and TypeScript.
+- Prisma 6 and PostgreSQL.
+- JWT access and refresh sessions.
+- Class Validator / Class Transformer.
+- Swagger / OpenAPI.
+- Helmet, cookie parsing and throttling.
+- Prometheus client metrics.
+- Jest and Supertest.
+
+### Frontend
+
+- Vue 3 and TypeScript.
+- Pinia, Vite and Tailwind CSS 4.
+- Axios, Vitest and Playwright.
+
+### Infrastructure
+
+- Docker and Docker Compose.
+- Development and production Dockerfiles.
+- PostgreSQL container.
+- Browser E2E container support.
+
+## Security approach
+
+- Access tokens expire after a short period.
+- Refresh tokens use HttpOnly cookies.
+- Refresh-token families support rotation and reuse detection.
+- Passwords are stored with bcrypt hashes.
+- The frontend keeps the access token in memory rather than `localStorage`.
+- Helmet, CSP and API throttling provide baseline hardening.
+- Metrics require a separate bearer token.
+
+These are implementation controls, not evidence of formal certification. A production deployment still requires secret management, dependency remediation, threat modelling, privacy review and security testing.
+
+## Quick start
+
+### Requirements
+
+- Docker.
+- Docker Compose.
+
+### Configure
+
 ```bash
-docker-compose up --build
+cp .env.example .env
 ```
 
-Backend: `http://localhost:3000/api/v1`  
-Frontend: `http://localhost:5173`  
-Metrics: `http://localhost:3000/metrics` (Bearer `METRICS_TOKEN`)
+The committed template contains development-only placeholders. Replace all secrets before any shared deployment.
 
-## Deploy (básico)
-Imágenes de producción:
-- Backend: `backend/Dockerfile.prod`
-- Frontend: `frontend/Dockerfile.prod`
+### Run
 
-Ejemplo build:
 ```bash
-docker build -f backend/Dockerfile.prod -t hotel-backend:prod ./backend
-docker build -f frontend/Dockerfile.prod -t hotel-frontend:prod ./frontend
+docker compose --env-file .env up --build
 ```
 
-## Archivo .env ejemplo
-Usa `.env.example` como base para producción.
+| Service | Address |
+|---|---|
+| Backend API | `http://localhost:3000/api/v1` |
+| Frontend | `http://localhost:5173` |
+| Protected metrics | `http://localhost:3000/metrics` |
 
-## Variables de entorno
-Archivo raíz `.env`:
-```
-DB_USER=admin_hotel
-DB_PASSWORD=palo_alto_secure_2026
-DB_NAME=hotel_pms_dev
-DATABASE_URL="postgresql://admin_hotel:palo_alto_secure_2026@postgres_db:5432/hotel_pms_dev?schema=public"
-JWT_SECRET=super_secret_key_hotel_2026
-BACKEND_PORT=3000
-FRONTEND_PORT=5173
-METRICS_TOKEN=super_secret_metrics_2026
-REFRESH_COOKIE_SAMESITE=lax
-REFRESH_COOKIE_SECURE=false
-```
+## Quality commands
 
-## Seed de datos
+These commands describe the intended validation workflow. They should not be considered passing until CI is restored.
+
 ```bash
-docker-compose exec backend npx prisma db seed
-```
-
-Credenciales seed:
-- Admin: `admin@paloalto.com` / `admin_password_123`
-- Staff: `staff@paloalto.com` / `staff_password_123`
-
-## Tests E2E
-```bash
-docker-compose exec backend npm run test:e2e
-```
-
-## Frontend E2E (Playwright)
-Requiere backend y frontend corriendo (Docker o local).
-```bash
-cd frontend
-npm install
-npx playwright install --with-deps
+cd backend
+npm ci
+npm run lint
+npm run build
+npm run test
 npm run test:e2e
 ```
 
-## CI (Frontend E2E)
-El workflow `frontend_e2e` levanta backend con `docker-compose` y corre Playwright.
-
-## Frontend E2E (Docker, recomendado)
-Si no tenés Playwright instalado localmente:
 ```bash
-docker-compose --env-file .env up -d
-docker-compose --env-file .env run --rm playwright bash -lc "npm ci && npm run test:e2e"
+cd frontend
+npm ci
+npm run lint
+npm run build
+npm run test
+npm run test:e2e
 ```
 
 ## API
-Documentación:
+
+Base prefix: `/api/v1`
+
+Reference documentation:
+
 - `API.md`
-- `API.txt`
+- Swagger/OpenAPI exposed by the backend.
 
-Prefijo obligatorio: `/api/v1`
+`API.txt` should be removed or generated from the canonical contract to avoid documentation drift.
 
-## Desarrollo sin Docker (opcional)
-Backend:
-```bash
-cd backend
-npm install
-npx prisma generate
-npm run start:dev
-```
+## Documentation
 
-Frontend:
-```bash
-cd frontend
-npm install
-npm run dev
-```
+- [Portfolio case study](docs/PORTFOLIO_CASE_STUDY.md)
+- [Implementation status](docs/PROJECT_STATUS.md)
+- `API.md`
 
-## Notas de seguridad
-- Access token expira en 15 minutos.
-- Refresh token expira en 7 días (HttpOnly cookie).
-- Passwords con bcrypt cost 10.
-- Refresh tokens ya usan HttpOnly cookies.
-- Access token se mantiene solo en memoria (no localStorage).
-- Refresh cookie configurable con `REFRESH_COOKIE_SAMESITE` y `REFRESH_COOKIE_SECURE`.
-- Refresh tokens con rotación y detección de reuse (family + jti).
+## Remediation priorities
 
-## CSP (Frontend)
-El frontend incluye un CSP básico en `frontend/index.html`.
-Si cambiás dominios/puertos en producción, actualizá `connect-src` acorde.
+1. Fix the `AppSidebar.vue` grouping type mismatch.
+2. Apply safe formatter/ESLint auto-fixes separately from semantic changes.
+3. Remove unsafe `any` usage in authentication, middleware, interceptors and tests.
+4. Restore backend/frontend build and test stages.
+5. Triage dependency vulnerabilities.
+6. Consolidate API documentation.
+7. Add screenshots only after the release baseline is green.
 
-## Observabilidad (Prometheus)
-Endpoint:
-```bash
-curl -H "Authorization: Bearer $METRICS_TOKEN" http://localhost:3000/metrics
-```
+## Scope note
 
-Alertas recomendadas (PromQL):
-```
-# 5xx > 1% en 5m
-sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
-
-# p95 > 500ms
-histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket[5m])) by (le)) > 500
-
-# Sin tráfico 5m
-sum(rate(http_requests_total[5m])) == 0
-```
+This repository is a full-stack TypeScript reference implementation under remediation. It should not be advertised as production-ready or as having a passing QA baseline until the open quality-debt work is completed.
