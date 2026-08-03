@@ -2,34 +2,45 @@
 
 **Full-stack hotel operations system built with NestJS, Prisma, PostgreSQL and Vue 3.**
 
-This repository is the portfolio reference for the **TypeScript/NestJS backend stack**. It demonstrates authentication, authorization, transactional hotel workflows, typed frontend integration, automated E2E testing, security hardening and operational metrics.
+This repository is the portfolio reference for the **TypeScript/NestJS backend stack**. It contains authentication, authorization, hotel workflows, typed frontend integration, test infrastructure, security controls and operational metrics.
 
-It is intentionally presented separately from **HMS Elite**, the Rust/React multi-hotel SaaS implementation. The purpose of this repository is to show equivalent full-stack capability using an enterprise TypeScript stack.
+It is intentionally separate from **HMS Elite**, the Rust/React multi-hotel SaaS implementation. This repository shows the TypeScript implementation path, but it is not currently release-ready.
 
-> **Status:** functional reference implementation under active refinement. Core hotel workflows, authentication, E2E testing and metrics are implemented; verified screenshots, a hosted demo and a stable tagged release remain pending.
+> **Current status:** active reference implementation with a red CI baseline. The latest review found one frontend TypeScript error and 415 backend lint findings. Test and E2E tooling exists, but passing-build and passing-test claims remain unverified until the quality baseline is restored.
 
 ## What this project demonstrates
 
-| Area | Evidence |
+| Area | Repository evidence |
 |---|---|
 | Backend development | NestJS 11, TypeScript, Prisma and PostgreSQL |
 | Frontend development | Vue 3, Pinia, Vite, TypeScript and Tailwind CSS |
 | API design | Versioned REST API, DTO validation and Swagger/OpenAPI |
 | Authentication | Short-lived access tokens, HttpOnly refresh cookies and token rotation |
-| Authorization | Administrator and staff role restrictions |
-| QA | Jest/Supertest backend E2E, Vitest and Playwright browser E2E |
-| Security | Bcrypt, Helmet, CSP, throttling and refresh-token reuse detection |
+| Authorization | Administrator and staff restrictions |
+| Test infrastructure | Jest/Supertest, Vitest and Playwright configuration |
+| Security design | Bcrypt, Helmet, CSP, throttling and refresh-token reuse detection |
 | Operations | Docker Compose, production Dockerfiles and protected Prometheus metrics |
 
-## Main workflows
+## Current quality baseline
+
+The repository has meaningful QA infrastructure, but the latest GitHub Actions run is **not green**:
+
+- Frontend lint passes, but the production build is blocked by a grouping type mismatch in `AppSidebar.vue`.
+- Backend lint reports **415 findings**: many are formatting corrections, while others involve unsafe `any` usage and require deliberate refactoring.
+- Backend build/tests and frontend unit/E2E stages were not reached in that run because earlier gates failed.
+- Dependency audits report vulnerabilities that require triage before a public deployment.
+
+For that reason, this repository should be presented as **technical evidence under remediation**, not as a stable release.
+
+## Main workflows present in the codebase
 
 - Authenticate administrators and staff.
 - Manage rooms and room states.
 - Enforce role-specific permissions.
 - Perform check-in and check-out operations.
-- Maintain access/refresh sessions safely.
+- Maintain access/refresh sessions.
 - Expose protected runtime metrics.
-- Validate complete frontend/backend journeys with Playwright.
+- Configure backend and browser E2E journeys.
 
 ## Architecture
 
@@ -43,8 +54,6 @@ flowchart LR
     PRISMA --> DB[(PostgreSQL)]
     API --> METRICS[Prometheus metrics]
 ```
-
-The implementation uses a conventional modular NestJS architecture. Prisma manages the relational data model and migrations, while Vue consumes the versioned API through a typed frontend workflow.
 
 ## Technology stack
 
@@ -62,12 +71,8 @@ The implementation uses a conventional modular NestJS architecture. Prisma manag
 ### Frontend
 
 - Vue 3 and TypeScript.
-- Pinia.
-- Vite.
-- Tailwind CSS 4.
-- Axios.
-- Vitest.
-- Playwright.
+- Pinia, Vite and Tailwind CSS 4.
+- Axios, Vitest and Playwright.
 
 ### Infrastructure
 
@@ -83,45 +88,10 @@ The implementation uses a conventional modular NestJS architecture. Prisma manag
 - Refresh-token families support rotation and reuse detection.
 - Passwords are stored with bcrypt hashes.
 - The frontend keeps the access token in memory rather than `localStorage`.
-- Helmet and CSP provide baseline browser hardening.
-- API throttling limits abusive request patterns.
-- Metrics require a dedicated bearer token.
+- Helmet, CSP and API throttling provide baseline hardening.
+- Metrics require a separate bearer token.
 
-These controls are an engineering baseline, not a formal security certification. A production deployment still requires deployment-specific secret management, threat modelling, privacy review and penetration testing.
-
-## Quality strategy
-
-### Backend E2E
-
-The backend test suite validates complete API behaviour, including:
-
-- Unauthenticated access rejection.
-- Administrator room creation.
-- Staff authorization restrictions.
-- Check-in and check-out flow.
-
-Run:
-
-```bash
-docker compose exec backend npm run test:e2e
-```
-
-### Frontend and browser E2E
-
-```bash
-cd frontend
-npm install
-npm run test
-npx playwright install --with-deps
-npm run test:e2e
-```
-
-Containerized browser E2E:
-
-```bash
-docker compose --env-file .env up -d
-docker compose --env-file .env run --rm playwright bash -lc "npm ci && npm run test:e2e"
-```
+These are implementation controls, not evidence of formal certification. A production deployment still requires secret management, dependency remediation, threat modelling, privacy review and security testing.
 
 ## Quick start
 
@@ -136,7 +106,7 @@ docker compose --env-file .env run --rm playwright bash -lc "npm ci && npm run t
 cp .env.example .env
 ```
 
-The committed `.env.example` uses development-only placeholders. Replace all secret values before any shared or public deployment.
+The committed template contains development-only placeholders. Replace all secrets before any shared deployment.
 
 ### Run
 
@@ -150,62 +120,38 @@ docker compose --env-file .env up --build
 | Frontend | `http://localhost:5173` |
 | Protected metrics | `http://localhost:3000/metrics` |
 
-### Seed development data
+## Quality commands
 
-```bash
-docker compose exec backend npx prisma db seed
-```
-
-Seed accounts are intended only for local development. Their credentials must not be reused outside the local environment.
-
-## Run without Docker
-
-### Backend
+These commands describe the intended validation workflow. They should not be considered passing until CI is restored.
 
 ```bash
 cd backend
-npm install
-npx prisma generate
-npm run start:dev
+npm ci
+npm run lint
+npm run build
+npm run test
+npm run test:e2e
 ```
-
-### Frontend
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm ci
+npm run lint
+npm run build
+npm run test
+npm run test:e2e
 ```
 
 ## API
 
-Base prefix:
-
-```text
-/api/v1
-```
+Base prefix: `/api/v1`
 
 Reference documentation:
 
 - `API.md`
 - Swagger/OpenAPI exposed by the backend.
 
-`API.txt` is retained only if another tool still consumes it; otherwise it should be removed to avoid maintaining duplicate API documentation.
-
-## Observability
-
-Metrics require the configured token:
-
-```bash
-curl -H "Authorization: Bearer $METRICS_TOKEN" http://localhost:3000/metrics
-```
-
-Recommended monitoring signals include:
-
-- HTTP 5xx error ratio.
-- p95 request latency.
-- Unexpected traffic absence.
-- Authentication failure spikes.
+`API.txt` should be removed or generated from the canonical contract to avoid documentation drift.
 
 ## Documentation
 
@@ -213,14 +159,16 @@ Recommended monitoring signals include:
 - [Implementation status](docs/PROJECT_STATUS.md)
 - `API.md`
 
-## Current priorities
+## Remediation priorities
 
-- Add verified screenshots for administrator and staff flows.
-- Publish a controlled demonstration environment.
-- Consolidate duplicate API documentation.
-- Expand authorization and session-security regression coverage.
-- Tag a stable TypeScript-stack portfolio release.
+1. Fix the `AppSidebar.vue` grouping type mismatch.
+2. Apply safe formatter/ESLint auto-fixes separately from semantic changes.
+3. Remove unsafe `any` usage in authentication, middleware, interceptors and tests.
+4. Restore backend/frontend build and test stages.
+5. Triage dependency vulnerabilities.
+6. Consolidate API documentation.
+7. Add screenshots only after the release baseline is green.
 
 ## Scope note
 
-This repository is a full-stack TypeScript reference implementation. Production adoption would additionally require organization-specific privacy, compliance, monitoring, infrastructure and support validation.
+This repository is a full-stack TypeScript reference implementation under remediation. It should not be advertised as production-ready or as having a passing QA baseline until the open quality-debt work is completed.
