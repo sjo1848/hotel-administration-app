@@ -2,9 +2,9 @@
 
 ## Executive summary
 
-This project is a full-stack hotel operations reference implementation using NestJS, Prisma, PostgreSQL and Vue 3. It demonstrates a complete TypeScript delivery path from API and relational modelling to frontend state, authentication, browser E2E and operational metrics.
+This project is a full-stack hotel operations reference implementation using NestJS, Prisma, PostgreSQL and Vue 3. It demonstrates the structure of a TypeScript delivery path from API and relational modelling to frontend state, authentication, metrics and automated-test tooling.
 
-The repository is intentionally distinct from HMS Elite. HMS Elite demonstrates Rust/React architecture at a broader SaaS scale; this project demonstrates enterprise TypeScript and NestJS capability.
+The repository is intentionally distinct from HMS Elite. HMS Elite demonstrates the stronger current release baseline with Rust/React; this project demonstrates enterprise TypeScript and NestJS capability while its CI debt is remediated.
 
 ## Problem
 
@@ -26,7 +26,7 @@ flowchart LR
 
 ### NestJS modular backend
 
-NestJS provides explicit modules, dependency injection, validation and testing support suitable for a conventional business application.
+NestJS provides modules, dependency injection, validation and testing support suitable for a conventional business application.
 
 ### Prisma persistence
 
@@ -38,23 +38,33 @@ The frontend avoids storing the access token in `localStorage`. Refresh sessions
 
 ### Refresh rotation and reuse detection
 
-Refresh tokens are treated as session families rather than indefinitely reusable credentials. Rotation and reuse detection improve the security baseline.
+Refresh tokens are treated as session families rather than indefinitely reusable credentials. Rotation and reuse detection improve the security design.
 
-### Complete-flow testing
+### Test infrastructure across layers
 
-The backend E2E suite verifies authentication, administrator/staff restrictions and check-in/check-out behaviour. Playwright validates the integrated browser workflow.
+The repository contains Jest/Supertest, Vitest and Playwright tooling and specifications. However, the latest reviewed CI run did not reach a green build-and-test baseline, so these should be described as configured infrastructure rather than currently passing evidence.
 
-## Quality and security evidence
+## Current quality evidence
 
-- NestJS/Jest unit and E2E tooling.
-- Supertest API validation.
-- Vue/Vitest frontend tests.
-- Playwright browser E2E.
+### Present in the repository
+
+- NestJS/Jest and Supertest tooling.
+- Vue/Vitest tooling.
+- Playwright browser-E2E configuration.
 - Bcrypt password hashing.
 - Helmet and CSP baseline hardening.
 - API throttling.
 - Protected Prometheus metrics.
 - Dockerized local environment.
+
+### Current blockers
+
+- One frontend production-build type error in `AppSidebar.vue`.
+- 415 backend lint findings, including formatting debt and unsafe typing.
+- Build and test completion not verified after the failing earlier gates.
+- Dependency vulnerabilities requiring triage.
+
+Therefore the project is useful architecture and implementation evidence, but not a stable QA claim.
 
 ## Trade-offs
 
@@ -63,17 +73,18 @@ The backend E2E suite verifies authentication, administrator/staff restrictions 
 - One language across frontend and backend.
 - Strong framework conventions and rapid iteration.
 - Typed persistence and DTO validation.
-- Straightforward onboarding for TypeScript teams.
+- Straightforward onboarding for TypeScript teams after the quality baseline is restored.
 
 ### Costs
 
 - Framework conventions can hide architectural decisions if modules are not kept explicit.
 - Refresh-session logic adds operational and testing complexity.
+- Large accumulated lint/type debt weakens trust in otherwise useful test infrastructure.
 - Duplicate API documents can drift if not consolidated.
-- A portfolio implementation still requires real-user and production validation.
 
 ## Current limitations
 
+- CI is red and the repository is not release-ready.
 - No public hosted demo.
 - No verified screenshots or walkthrough.
 - No tagged stable portfolio release.
@@ -82,12 +93,13 @@ The backend E2E suite verifies authentication, administrator/staff restrictions 
 
 ## Next milestones
 
-1. Capture administrator and staff workflow screenshots.
-2. Consolidate API documentation around Swagger/OpenAPI and one maintained Markdown reference.
-3. Expand session-security and authorization regression tests.
-4. Publish a controlled demonstration environment.
-5. Tag a stable NestJS/Vue portfolio release.
+1. Fix the frontend grouping type mismatch.
+2. Split mechanical backend formatting from semantic type-safety remediation.
+3. Restore green builds and all test stages.
+4. Triage dependency vulnerabilities.
+5. Consolidate API documentation around one canonical contract.
+6. Capture screenshots and publish a demo only from a green release commit.
 
 ## Professional relevance
 
-The repository demonstrates full-stack TypeScript delivery, backend API design, session security, relational persistence, frontend integration and automated QA for an operational business system.
+The repository demonstrates full-stack TypeScript structure, backend API design, session-security concepts, relational persistence and frontend integration. It also provides an honest example of why configured QA tooling is not equivalent to a passing quality baseline.
