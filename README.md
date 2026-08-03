@@ -1,96 +1,167 @@
-# Sistema de Gestión Hotelera (PMS)
+# Hotel Operations PMS — NestJS + Vue Reference
 
-PMS para operación hotelera con backend NestJS + Prisma + Postgres y frontend Vue + Pinia + Tailwind.
+**Full-stack hotel operations system built with NestJS, Prisma, PostgreSQL and Vue 3.**
 
-## Stack
-- Backend: NestJS, Prisma, PostgreSQL
-- Frontend: Vue 3, Pinia, Tailwind
-- Infra: Docker Compose
+This repository is the portfolio reference for the **TypeScript/NestJS backend stack**. It demonstrates authentication, authorization, transactional hotel workflows, typed frontend integration, automated E2E testing, security hardening and operational metrics.
 
-## Requisitos
-- Docker + Docker Compose
-- Node 20+ (solo si corres fuera de Docker)
+It is intentionally presented separately from **HMS Elite**, the Rust/React multi-hotel SaaS implementation. The purpose of this repository is to show equivalent full-stack capability using an enterprise TypeScript stack.
 
-## Inicio rápido (Docker)
+> **Status:** functional reference implementation under active refinement. Core hotel workflows, authentication, E2E testing and metrics are implemented; verified screenshots, a hosted demo and a stable tagged release remain pending.
+
+## What this project demonstrates
+
+| Area | Evidence |
+|---|---|
+| Backend development | NestJS 11, TypeScript, Prisma and PostgreSQL |
+| Frontend development | Vue 3, Pinia, Vite, TypeScript and Tailwind CSS |
+| API design | Versioned REST API, DTO validation and Swagger/OpenAPI |
+| Authentication | Short-lived access tokens, HttpOnly refresh cookies and token rotation |
+| Authorization | Administrator and staff role restrictions |
+| QA | Jest/Supertest backend E2E, Vitest and Playwright browser E2E |
+| Security | Bcrypt, Helmet, CSP, throttling and refresh-token reuse detection |
+| Operations | Docker Compose, production Dockerfiles and protected Prometheus metrics |
+
+## Main workflows
+
+- Authenticate administrators and staff.
+- Manage rooms and room states.
+- Enforce role-specific permissions.
+- Perform check-in and check-out operations.
+- Maintain access/refresh sessions safely.
+- Expose protected runtime metrics.
+- Validate complete frontend/backend journeys with Playwright.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    USER[Admin / staff] --> FE[Vue 3 + Pinia]
+    FE -->|REST / JSON| API[NestJS API]
+    API --> AUTH[JWT, refresh rotation and RBAC]
+    API --> DOMAIN[Hotel application modules]
+    DOMAIN --> PRISMA[Prisma ORM]
+    PRISMA --> DB[(PostgreSQL)]
+    API --> METRICS[Prometheus metrics]
+```
+
+The implementation uses a conventional modular NestJS architecture. Prisma manages the relational data model and migrations, while Vue consumes the versioned API through a typed frontend workflow.
+
+## Technology stack
+
+### Backend
+
+- NestJS 11 and TypeScript.
+- Prisma 6 and PostgreSQL.
+- JWT access and refresh sessions.
+- Class Validator / Class Transformer.
+- Swagger / OpenAPI.
+- Helmet, cookie parsing and throttling.
+- Prometheus client metrics.
+- Jest and Supertest.
+
+### Frontend
+
+- Vue 3 and TypeScript.
+- Pinia.
+- Vite.
+- Tailwind CSS 4.
+- Axios.
+- Vitest.
+- Playwright.
+
+### Infrastructure
+
+- Docker and Docker Compose.
+- Development and production Dockerfiles.
+- PostgreSQL container.
+- Browser E2E container support.
+
+## Security approach
+
+- Access tokens expire after a short period.
+- Refresh tokens use HttpOnly cookies.
+- Refresh-token families support rotation and reuse detection.
+- Passwords are stored with bcrypt hashes.
+- The frontend keeps the access token in memory rather than `localStorage`.
+- Helmet and CSP provide baseline browser hardening.
+- API throttling limits abusive request patterns.
+- Metrics require a dedicated bearer token.
+
+These controls are an engineering baseline, not a formal security certification. A production deployment still requires deployment-specific secret management, threat modelling, privacy review and penetration testing.
+
+## Quality strategy
+
+### Backend E2E
+
+The backend test suite validates complete API behaviour, including:
+
+- Unauthenticated access rejection.
+- Administrator room creation.
+- Staff authorization restrictions.
+- Check-in and check-out flow.
+
+Run:
+
 ```bash
-docker-compose up --build
+docker compose exec backend npm run test:e2e
 ```
 
-Backend: `http://localhost:3000/api/v1`  
-Frontend: `http://localhost:5173`  
-Metrics: `http://localhost:3000/metrics` (Bearer `METRICS_TOKEN`)
+### Frontend and browser E2E
 
-## Deploy (básico)
-Imágenes de producción:
-- Backend: `backend/Dockerfile.prod`
-- Frontend: `frontend/Dockerfile.prod`
-
-Ejemplo build:
-```bash
-docker build -f backend/Dockerfile.prod -t hotel-backend:prod ./backend
-docker build -f frontend/Dockerfile.prod -t hotel-frontend:prod ./frontend
-```
-
-## Archivo .env ejemplo
-Usa `.env.example` como base para producción.
-
-## Variables de entorno
-Archivo raíz `.env`:
-```
-DB_USER=admin_hotel
-DB_PASSWORD=palo_alto_secure_2026
-DB_NAME=hotel_pms_dev
-DATABASE_URL="postgresql://admin_hotel:palo_alto_secure_2026@postgres_db:5432/hotel_pms_dev?schema=public"
-JWT_SECRET=super_secret_key_hotel_2026
-BACKEND_PORT=3000
-FRONTEND_PORT=5173
-METRICS_TOKEN=super_secret_metrics_2026
-REFRESH_COOKIE_SAMESITE=lax
-REFRESH_COOKIE_SECURE=false
-```
-
-## Seed de datos
-```bash
-docker-compose exec backend npx prisma db seed
-```
-
-Credenciales seed:
-- Admin: `admin@paloalto.com` / `admin_password_123`
-- Staff: `staff@paloalto.com` / `staff_password_123`
-
-## Tests E2E
-```bash
-docker-compose exec backend npm run test:e2e
-```
-
-## Frontend E2E (Playwright)
-Requiere backend y frontend corriendo (Docker o local).
 ```bash
 cd frontend
 npm install
+npm run test
 npx playwright install --with-deps
 npm run test:e2e
 ```
 
-## CI (Frontend E2E)
-El workflow `frontend_e2e` levanta backend con `docker-compose` y corre Playwright.
+Containerized browser E2E:
 
-## Frontend E2E (Docker, recomendado)
-Si no tenés Playwright instalado localmente:
 ```bash
-docker-compose --env-file .env up -d
-docker-compose --env-file .env run --rm playwright bash -lc "npm ci && npm run test:e2e"
+docker compose --env-file .env up -d
+docker compose --env-file .env run --rm playwright bash -lc "npm ci && npm run test:e2e"
 ```
 
-## API
-Documentación:
-- `API.md`
-- `API.txt`
+## Quick start
 
-Prefijo obligatorio: `/api/v1`
+### Requirements
 
-## Desarrollo sin Docker (opcional)
-Backend:
+- Docker.
+- Docker Compose.
+
+### Configure
+
+```bash
+cp .env.example .env
+```
+
+The committed `.env.example` uses development-only placeholders. Replace all secret values before any shared or public deployment.
+
+### Run
+
+```bash
+docker compose --env-file .env up --build
+```
+
+| Service | Address |
+|---|---|
+| Backend API | `http://localhost:3000/api/v1` |
+| Frontend | `http://localhost:5173` |
+| Protected metrics | `http://localhost:3000/metrics` |
+
+### Seed development data
+
+```bash
+docker compose exec backend npx prisma db seed
+```
+
+Seed accounts are intended only for local development. Their credentials must not be reused outside the local environment.
+
+## Run without Docker
+
+### Backend
+
 ```bash
 cd backend
 npm install
@@ -98,40 +169,58 @@ npx prisma generate
 npm run start:dev
 ```
 
-Frontend:
+### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Notas de seguridad
-- Access token expira en 15 minutos.
-- Refresh token expira en 7 días (HttpOnly cookie).
-- Passwords con bcrypt cost 10.
-- Refresh tokens ya usan HttpOnly cookies.
-- Access token se mantiene solo en memoria (no localStorage).
-- Refresh cookie configurable con `REFRESH_COOKIE_SAMESITE` y `REFRESH_COOKIE_SECURE`.
-- Refresh tokens con rotación y detección de reuse (family + jti).
+## API
 
-## CSP (Frontend)
-El frontend incluye un CSP básico en `frontend/index.html`.
-Si cambiás dominios/puertos en producción, actualizá `connect-src` acorde.
+Base prefix:
 
-## Observabilidad (Prometheus)
-Endpoint:
+```text
+/api/v1
+```
+
+Reference documentation:
+
+- `API.md`
+- Swagger/OpenAPI exposed by the backend.
+
+`API.txt` is retained only if another tool still consumes it; otherwise it should be removed to avoid maintaining duplicate API documentation.
+
+## Observability
+
+Metrics require the configured token:
+
 ```bash
 curl -H "Authorization: Bearer $METRICS_TOKEN" http://localhost:3000/metrics
 ```
 
-Alertas recomendadas (PromQL):
-```
-# 5xx > 1% en 5m
-sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+Recommended monitoring signals include:
 
-# p95 > 500ms
-histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket[5m])) by (le)) > 500
+- HTTP 5xx error ratio.
+- p95 request latency.
+- Unexpected traffic absence.
+- Authentication failure spikes.
 
-# Sin tráfico 5m
-sum(rate(http_requests_total[5m])) == 0
-```
+## Documentation
+
+- [Portfolio case study](docs/PORTFOLIO_CASE_STUDY.md)
+- [Implementation status](docs/PROJECT_STATUS.md)
+- `API.md`
+
+## Current priorities
+
+- Add verified screenshots for administrator and staff flows.
+- Publish a controlled demonstration environment.
+- Consolidate duplicate API documentation.
+- Expand authorization and session-security regression coverage.
+- Tag a stable TypeScript-stack portfolio release.
+
+## Scope note
+
+This repository is a full-stack TypeScript reference implementation. Production adoption would additionally require organization-specific privacy, compliance, monitoring, infrastructure and support validation.
